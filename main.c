@@ -14,6 +14,7 @@ struct command {
 };
 
 
+// given a line of text, creates and returns a pointer to a command struct
 struct command *createCommand(char *commandText) {
   // command [arg1 arg2 ...] [< input_file] [> output_file] [&]
   struct command *myCommand = malloc(sizeof(struct command));
@@ -60,6 +61,19 @@ struct command *createCommand(char *commandText) {
 
   return myCommand;
 }
+
+
+// given a pointer to a command struct, frees the memory allocated to it
+void freeCommand(struct command *myCommand) {
+  free(myCommand->program);
+  for(int i = 0; i<MAX_ARGUMENTS; i++) {
+    if(myCommand->arguments[i]) free(myCommand->arguments[i]);
+  }
+  if(myCommand->inputFile) free(myCommand->inputFile);
+  if(myCommand->outputFile) free(myCommand->outputFile);
+  free(myCommand);
+}
+
 
 void printCommand(struct command *myCommand) {
   printf("Program: %s\n", myCommand->program);
@@ -115,6 +129,7 @@ int main() {
       // if command starts with '#' or is empty, do nothing
       struct command *myCommand = createCommand(commandText);
       printCommand(myCommand);
+      freeCommand(myCommand);
     }
   }
 }
