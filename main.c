@@ -8,7 +8,7 @@
 struct command {
   char *program;
   char *arguments[MAX_ARGUMENTS]; // maximum of 512 arguments
-  char *inpuFile;
+  char *inputFile;
   char *outputFile;
   bool isBackground;
 };
@@ -36,7 +36,27 @@ struct command *createCommand(char *commandText) {
     i++;
   }
 
-  
+  // parse the <
+  if(token && token[0] == '<') {
+    token = strtok_r(NULL, " ", &saveptr);  // get the parameter (inputFile)
+    myCommand->inputFile = calloc(strlen(token) + 1, sizeof(char));
+    strcpy(myCommand->inputFile, token);
+    token = strtok_r(NULL, " ", &saveptr);
+  }
+
+  // parse the >
+  if(token && token[0] == '>') {
+    token = strtok_r(NULL, " ", &saveptr);  // get the parameter (outputFile)
+    myCommand->outputFile = calloc(strlen(token) + 1, sizeof(char));
+    strcpy(myCommand->outputFile, token);
+    token = strtok_r(NULL, " ", &saveptr);
+  }
+
+  // parse the &
+  myCommand->isBackground = false;
+  if(token && token[0] == '&') {
+    myCommand->isBackground = true;
+  }
 
   return myCommand;
 }
@@ -48,6 +68,9 @@ void printCommand(struct command *myCommand) {
     printf("Argument %d: %s\n", i, myCommand->arguments[i]);
     i++;
   }
+  printf("Input: %s\n", myCommand->inputFile);
+  printf("Output: %s\n", myCommand->outputFile);
+  printf("Is Background: %s\n", myCommand->isBackground ? "true" : "false");
   fflush(stdout);
 }
 
