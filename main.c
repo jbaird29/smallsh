@@ -3,17 +3,52 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-struct commandText {
-  char *command;
-  char *arguments[512];
+#define MAX_ARGUMENTS 512
+
+struct command {
+  char *program;
+  char *arguments[MAX_ARGUMENTS]; // maximum of 512 arguments
   char *inpuFile;
   char *outputFile;
   bool isBackground;
 };
 
 
-void parseCommandText(char *input) {
-  return;
+struct command *createCommand(char *commandText) {
+  // command [arg1 arg2 ...] [< input_file] [> output_file] [&]
+  struct command *myCommand = malloc(sizeof(struct command));
+  char *saveptr;
+  char *token;
+
+  // first word is the program
+  token = strtok_r(commandText, " ", &saveptr);
+  myCommand->program = calloc(strlen(token) + 1, sizeof(char));
+  strcpy(myCommand->program, token);
+
+  // next words are the arguments; continue until < > or & reached
+  for (int i=0; i<MAX_ARGUMENTS; i++) myCommand->arguments[i] = NULL;
+  int i = 0;
+  token = strtok_r(NULL, " ", &saveptr);
+  while(token && token[0] != '<' && token[0] != '>' && token[0] != '&') {
+    myCommand->arguments[i] = calloc(strlen(token) + 1, sizeof(char));
+    strcpy(myCommand->arguments[i], token);
+    token = strtok_r(NULL, " ", &saveptr);
+    i++;
+  }
+
+  
+
+  return myCommand;
+}
+
+void printCommand(struct command *myCommand) {
+  printf("Program: %s\n", myCommand->program);
+  int i = 0;
+  while(myCommand->arguments[i] != NULL) {
+    printf("Argument %d: %s\n", i, myCommand->arguments[i]);
+    i++;
+  }
+  fflush(stdout);
 }
 
 
@@ -55,7 +90,8 @@ int main() {
       return EXIT_SUCCESS;
     } else if(!startsWithOrEmpty(commandText, '#')) { 
       // if command starts with '#' or is empty, do nothing
-      printf("%s\n", commandText);
+      struct command *myCommand = createCommand(commandText);
+      printCommand(myCommand);
     }
   }
 }
