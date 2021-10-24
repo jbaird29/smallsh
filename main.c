@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+
 #define MAX_ARGUMENTS 512
+
 
 struct command {
   char *program;
@@ -14,46 +16,67 @@ struct command {
 };
 
 
+// allocates memory for a string and copies the target string into that memory space
+void allocateAndCopyString(char **ptrToStringToAllocate, char *stringtoCopy) {
+  *ptrToStringToAllocate = calloc(strlen(stringtoCopy) + 1, sizeof(char));
+  strcpy(*ptrToStringToAllocate, stringtoCopy);
+}
+
+
+void addInputOrOutputFile(struct command *myCommand, char *file, char operator) {
+  if(operator == '<') {
+    allocateAndCopyString(&myCommand->inputFile, file);
+  } else {
+    allocateAndCopyString(&myCommand->outputFile, file);
+  }
+}
+
+// returns True
+bool isAnArgument(char *string) {
+  // TODO - "If the & character appears anywhere else, just treat it as normal text"
+  // could & be an argument to the program?
+  // if so, then I will have additionally to ensure that the & here is the final character in the string
+  // something like: strcmp(string, "&") == 0 && isLastCharacter(string)
+  if(strcmp(string, ">") == 0 || strcmp(string, "<") == 0 || strcmp(string, "&") == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+
 // given a line of text, creates and returns a pointer to a command struct
 struct command *createCommand(char *commandText) {
-  // command [arg1 arg2 ...] [< input_file] [> output_file] [&]
+  // syntax:  command [arg1 arg2 ...] [< input_file] [> output_file] [&]
   struct command *myCommand = malloc(sizeof(struct command));
   char *saveptr;
   char *token;
 
   // first word is the program
   token = strtok_r(commandText, " ", &saveptr);
-  myCommand->program = calloc(strlen(token) + 1, sizeof(char));
-  strcpy(myCommand->program, token);
+  allocateAndCopyString(&myCommand->program, token);
 
   // next words are the arguments; continue until < > or & reached
   for (int i=0; i<MAX_ARGUMENTS; i++) myCommand->arguments[i] = NULL;
   int i = 0;
   token = strtok_r(NULL, " ", &saveptr);
-  while(token && token[0] != '<' && token[0] != '>' && token[0] != '&') {
-    myCommand->arguments[i] = calloc(strlen(token) + 1, sizeof(char));
-    strcpy(myCommand->arguments[i], token);
+  while(token && isAnArgument(token)) {
+    allocateAndCopyString(&myCommand->arguments[i], token);
     token = strtok_r(NULL, " ", &saveptr);
     i++;
   }
 
-  // parse the <
-  if(token && token[0] == '<') {
-    token = strtok_r(NULL, " ", &saveptr);  // get the parameter (inputFile)
-    myCommand->inputFile = calloc(strlen(token) + 1, sizeof(char));
-    strcpy(myCommand->inputFile, token);
-    token = strtok_r(NULL, " ", &saveptr);
+  // parse the < or > (two times) if they are present
+  for(int i = 0; i < 2; i++) {
+    if(token && (token[0] == '<' || token[0] == '>')) {
+      char operator = token[0];  // get the operator (either > or <)
+      token = strtok_r(NULL, " ", &saveptr);  // get the parameter (either inputFile or outputFile)
+      addInputOrOutputFile(myCommand, token, operator);
+      token = strtok_r(NULL, " ", &saveptr);
+    }
   }
 
-  // parse the >
-  if(token && token[0] == '>') {
-    token = strtok_r(NULL, " ", &saveptr);  // get the parameter (outputFile)
-    myCommand->outputFile = calloc(strlen(token) + 1, sizeof(char));
-    strcpy(myCommand->outputFile, token);
-    token = strtok_r(NULL, " ", &saveptr);
-  }
-
-  // parse the &
+  // parse the & if it is present
   myCommand->isBackground = false;
   if(token && token[0] == '&') {
     myCommand->isBackground = true;
