@@ -91,13 +91,8 @@ static bool isAnArgument(char *string) {
 }
 
 
-
-
-/* ------------------------ EXTERNAL FUNCTIONS ------------------------ */
-
-// given a line of text, creates and returns a pointer to a command struct
-struct command *createCommand(char *commandText) {
-  // syntax:  command [arg1 arg2 ...] [< input_file] [> output_file] [&]
+// allocates memory for a command struct, initializes its values, and returns a pointer to it
+static struct command *initializeCommand() {
   struct command *myCommand = malloc(sizeof(struct command));
   // initialize the command struct default values
   myCommand->program = NULL;
@@ -106,7 +101,18 @@ struct command *createCommand(char *commandText) {
   myCommand->inputFile = NULL;
   myCommand->outputFile = NULL;
   myCommand->isBackground = false;
-  // initialize variables for strtok
+  return myCommand;
+}
+
+
+
+
+/* ------------------------ EXTERNAL FUNCTIONS ------------------------ */
+
+// given a line of text, creates and returns a pointer to a command struct
+struct command *createCommand(char *commandText) {
+  // syntax:  command [arg1 arg2 ...] [< input_file] [> output_file] [&]
+  struct command *myCommand = initializeCommand();
   char *saveptr;
   char *token;
 
