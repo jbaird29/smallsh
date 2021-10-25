@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <math.h>
-#include "parsecommand.h"
+#include "commandstruct.h"
 
 /* ------------------------ HELPER FUNCTIONS ------------------------ */
 
