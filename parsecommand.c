@@ -144,9 +144,7 @@ struct command *createCommand(char *commandText) {
 // given a pointer to a command struct, frees the memory allocated to it
 void freeCommand(struct command *myCommand) {
   free(myCommand->program);
-  for(int i = 0; i<MAX_ARGUMENTS; i++) {
-    if(myCommand->arguments[i]) free(myCommand->arguments[i]);
-  }
+  for(int i = 0; i<myCommand->argCount; i++) free(myCommand->arguments[i]);
   if(myCommand->inputFile) free(myCommand->inputFile);
   if(myCommand->outputFile) free(myCommand->outputFile);
   free(myCommand);
@@ -156,11 +154,7 @@ void freeCommand(struct command *myCommand) {
 // For Debugging: given a commands, prints it to stdout
 void printCommand(struct command *myCommand) {
   printf("Program: %s\n", myCommand->program);
-  int i = 0;
-  while(myCommand->arguments[i] != NULL) {
-    printf("Argument %d: %s\n", i, myCommand->arguments[i]);
-    i++;
-  }
+  for(int i = 0; i<myCommand->argCount; i++) printf("Argument %d: %s\n", i, myCommand->arguments[i]);
   printf("Input: %s\n", myCommand->inputFile);
   printf("Output: %s\n", myCommand->outputFile);
   printf("Is Background: %s\n", myCommand->isBackground ? "true" : "false");
