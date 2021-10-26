@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <math.h>
 #include "structs.h"
+#include "globals.h"
 
 #define MAX_COMMAND_LEN 2048
 
@@ -183,7 +184,7 @@ struct command *createCommand(char *commandText) {
 
   // parse the & if it is present
   if(token && token[0] == '&') {
-    myCommand->isBackground = true;
+    if(!fgOnlyMode) myCommand->isBackground = true;  // don't set to true if fgOnlyMode is active
   }
 
   return myCommand;
