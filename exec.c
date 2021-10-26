@@ -71,6 +71,7 @@ static void runExecCommand(struct command *myCommand, struct bgProcess *head) {
   } else {  // parent process
     if(!myCommand->isBackground) {  // if foreground, we need to block
       lastFpProcess.childPid = childPid;  // set the global variable lastFpProcess 
+      // NOTE: waitpid is also called in SIGTSTP handler; if that reaps the child process, result will equal -1 but wstatus will still be validly set
       waitpid(childPid, &lastFpProcess.wstatus, 0);  // blocking until the child process terminates; set global variable lastFpProcess 
       if(!WIFEXITED(lastFpProcess.wstatus)) printStatus(lastFpProcess.wstatus);  // if terminated by signal, print that signal
     } else {  // if background, we do not block

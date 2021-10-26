@@ -13,22 +13,6 @@
 #include "globals.h"
 
 
-// signal handler - when user sends TSTP signal, the shell toggles on and off between foreground only mode
-void handle_fgModeToggleSignal(int signo){
-  // TODO - IN PROCESS; need to wait for any foreground child processes that are still finishing before printing msg to stdout
-  fgOnlyMode = !fgOnlyMode;  // toggle the global state variable
-  putchar('\n');
-}
-
-
-// check if fg only mode was toggled and prints a message if so
-void checkFgMode(bool *prevFgOnlyMode) {
-  if(*prevFgOnlyMode != fgOnlyMode) {  // if fg only mode was toggled, print a notification to stdout
-    *prevFgOnlyMode = fgOnlyMode;
-    fgOnlyMode ? printf("Entering foreground-only mode (& is now ignored)\n") : printf("Exiting foreground-only mode\n");
-    fflush(stdout);
-  }
-}
 
 // given a buffer, gets a command from the user and inputs it into the buffers
 void getUserCommand(char *commandText) {
@@ -45,17 +29,17 @@ void getUserCommand(char *commandText) {
 
 int main() {
   registerHandler(SIGINT, SIG_IGN);  // ignore SIGINT signal
-  registerHandler(SIGTSTP, handle_fgModeToggleSignal);
+  registerHandler(SIGTSTP, handle_fgModeToggleSignal);  // set TSTP to toggle "foreground-only mode" on and off
   struct bgProcess *head = initializeBgProcess();  // linked list holding all currently running background processes
   char commandText[2049];  // holds user-inputted command; has max length of 2048 characters per instructions
   while(1) {
     reapBgProccesses(head);  // reap any background proceses that have terminated
     getUserCommand(commandText);  // prompt user for a command 
-    if(!startsWithOrEmpty(commandText, '#')) {   // if command starts with '#' or is empty, do nothing
-      struct command *myCommand = createCommand(commandText);
+    if(!startsWithOrEmpty(commandText, '#')) {   // if command starts with '#' or is empty, do nothing; else continue
+      struct command *myCommand = createCommand(commandText);  // parse the command and put info into a struct
       // printCommand(myCommand);  // for debugging
-      runCommand(myCommand, head);
-      freeCommand(myCommand);
+      runCommand(myCommand, head);  // execute the command
+      freeCommand(myCommand);  // free the memory allocated for the struct
     }
   }
 }
