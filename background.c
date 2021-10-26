@@ -46,6 +46,7 @@ void reapBgProccesses(struct bgProcess *head) {
     if(waitpid(node->childPid, &wstatus, WNOHANG)) {  // if the process has terminated (returns pid)
       printf("background pid %d is done: ", node->childPid);  // print the pid and exit status
       WIFEXITED(wstatus) ? printf("exit value %d\n", WEXITSTATUS(wstatus)) : printf("terminated by signal %d\n", WTERMSIG(wstatus));
+      fflush(stdout);
       prev->next = node->next;  // remove this node from the list
       freeBgProcess(node);  // free the memory
       node = prev->next;  // iterate to the next node

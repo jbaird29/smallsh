@@ -78,6 +78,7 @@ static void executeOtherCommand(struct command *myCommand, int *lastExitStatus, 
       waitpid(childPid, lastExitStatus, 0);  // blocking until the child process terminates
     } else {  // if background, we do not block
       printf("background pid is %d\n", childPid);
+      fflush(stdout);
       bgProcessInsertFront(head, childPid);  // insert this processID into the linked list, to be reaped later
     }
   }
@@ -110,6 +111,7 @@ void executeCommand(struct command *myCommand, int *lastExitStatus, struct bgPro
 		} else{
 			printf("terminated by signal %d\n", WTERMSIG(*lastExitStatus));
 		}
+    fflush(stdout);
   } else {
     executeOtherCommand(myCommand, lastExitStatus, head);
   }
