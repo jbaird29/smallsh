@@ -3,6 +3,10 @@
 
 bool startsWithOrEmpty(char * text, char comparison);
 
+char *getUserCommand();
+
+void freeUserCommand(char *commandText);
+
 struct command *createCommand(char *commandText);
 
 void freeCommand(struct command *myCommand);

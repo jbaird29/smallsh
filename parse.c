@@ -7,6 +7,8 @@
 #include <math.h>
 #include "structs.h"
 
+#define MAX_COMMAND_LEN 2048
+
 /* ------------------------ HELPER FUNCTIONS ------------------------ */
 
 // given a string, returns a pointer to a new string with the $$ pid variable expanded (if any)
@@ -127,6 +129,26 @@ bool startsWithOrEmpty(char * text, char comparison) {
   }
   // if ALL letters were non printable, return true
   return true;
+}
+
+
+// gets a command from the user and returns a pointer to the string
+char *getUserCommand() {
+  char *commandText = calloc(MAX_COMMAND_LEN + 1, sizeof(char));  // allocate memory space for the string
+  putchar(':');
+  putchar(' ');
+  fflush(stdout);
+  fgets(commandText, MAX_COMMAND_LEN+1, stdin);
+  // Below line copied from: https://stackoverflow.com/questions/2693776/removing-trailing-newline-character-from-fgets-input
+  // Purpose: How to remove newline character after fgets()   Date: 10/22/2021
+  commandText[strcspn(commandText, "\n")] = 0;
+  return commandText;
+}
+
+
+// given a user command, frees the memory allocated to it
+void freeUserCommand(char *commandText) {
+  free(commandText);
 }
 
 
