@@ -20,5 +20,9 @@ struct bgProcess {
   struct bgProcess *next;
 };
 
+struct lastProcess {
+  pid_t childPid;
+  int wstatus;
+};
 
 #endif

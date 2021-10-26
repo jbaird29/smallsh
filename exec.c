@@ -6,13 +6,14 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
-#include "command.h"
+#include "structs.h"
 #include "background.h"
 #include "sighandle.h"
 #include "status.h"
+#include "globals.h"
+
 
 /* ------------------------ HELPER FUNCTIONS ------------------------ */
-
 // redirects stdin or stdout to point to new filename; if stdFileNo is 0 -> stdin; if stdFileNo is 1 -> stdout
 static void redirectStd(char *filename, int stdFileNo) {
   int openFlags = (stdFileNo == 0) ? (O_RDONLY) : (O_WRONLY | O_CREAT | O_TRUNC);  // 0 for stdin, 1 for stdout
@@ -44,12 +45,12 @@ static void runChildProcess(struct command *myCommand) {
     if(myCommand->inputFile) redirectStd(myCommand->inputFile, 0);  // redir to input if provided, else leave as stdin
     if(myCommand->outputFile) redirectStd(myCommand->outputFile, 1);  // redir to output if provided, else leave as stdin
     registerHandler(SIGINT, SIG_DFL);  // foregound processes should terminate upon receiving SIGINT
-    registerHandler(SIGTSTP, SIG_DFL);  // foregound processes should ignore SIGTSP
+    registerHandler(SIGTSTP, SIG_IGN);  // foregound processes should ignore SIGTSP
   } else {  // if background process
     myCommand->inputFile ? redirectStd(myCommand->inputFile, 0) : redirectStd("/dev/null", 0);  // redir to input or /dev/null
     myCommand->outputFile ? redirectStd(myCommand->outputFile, 1) : redirectStd("/dev/null", 1);  // redir to output or /dev/null
     registerHandler(SIGINT, SIG_IGN);  // background processes should ignore SIGINT
-    registerHandler(SIGTSTP, SIG_DFL);  // background processes should ignore SIGTSP
+    registerHandler(SIGTSTP, SIG_IGN);  // background processes should ignore SIGTSP
   }
   char *newargv[myCommand->argCount + 2]; // ["ls", "-a", "-l", NULL]  length is # of arguments, add two for the program and NULL
   fillExecVector(myCommand, newargv);  // fill the array with the strings listed above
@@ -60,7 +61,7 @@ static void runChildProcess(struct command *myCommand) {
 
 
 // runs fork() and exec() to execute a command
-static void runExecCommand(struct command *myCommand, int *lastExitStatus, struct bgProcess *head) {
+static void runExecCommand(struct command *myCommand, struct bgProcess *head) {
 	pid_t childPid = fork();  // in the child: equals 0;  in the parent: equals the child's pid
   if(childPid == -1) {
     perror("fork() failed!");
@@ -69,8 +70,9 @@ static void runExecCommand(struct command *myCommand, int *lastExitStatus, struc
     runChildProcess(myCommand);
   } else {  // parent process
     if(!myCommand->isBackground) {  // if foreground, we need to block
-      waitpid(childPid, lastExitStatus, 0);  // blocking until the child process terminates
-      if(!WIFEXITED(*lastExitStatus)) printStatus(*lastExitStatus);  // if terminated by signal, print that signal
+      lastFpProcess.childPid = childPid;  // set the global variable lastFpProcess 
+      waitpid(childPid, &lastFpProcess.wstatus, 0);  // blocking until the child process terminates; set global variable lastFpProcess 
+      if(!WIFEXITED(lastFpProcess.wstatus)) printStatus(lastFpProcess.wstatus);  // if terminated by signal, print that signal
     } else {  // if background, we do not block
       printf("background pid is %d\n", childPid);
       fflush(stdout);
@@ -84,7 +86,7 @@ static void runExecCommand(struct command *myCommand, int *lastExitStatus, struc
 
 /* ------------------------ EXTERNAL FUNCTIONS ------------------------ */
 
-void runCommand(struct command *myCommand, int *lastExitStatus, struct bgProcess *head) {
+void runCommand(struct command *myCommand, struct bgProcess *head) {
   if(strcmp(myCommand->program, "exit") == 0) {
     // TODO ------------------------------------------------------------------
     // The exit command exits your shell. It takes no arguments. When this command is run, 
@@ -97,8 +99,8 @@ void runCommand(struct command *myCommand, int *lastExitStatus, struct bgProcess
       // This is typically not the location where smallsh was executed from, unless your shell executable is located in the HOME directory, in which case these are the same.
     // This command can also take one argument: the path of a directory to change to. Your cd command should support both absolute and relative paths.
   } else if (strcmp(myCommand->program, "status") == 0) {
-    printStatus(*lastExitStatus);  // prints the exit val or term signal to stdout
+    printStatus(lastFpProcess.wstatus);  // prints the exit val or term signal to stdout
   } else {
-    runExecCommand(myCommand, lastExitStatus, head);
+    runExecCommand(myCommand, head);
   }
 }

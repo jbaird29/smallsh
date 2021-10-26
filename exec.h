@@ -1,6 +1,6 @@
 #ifndef EXEC_H
 #define EXEC_H 
 
-void runCommand(struct command *myCommand, int *lastExitStatus, struct bgProcess *head);
+void runCommand(struct command *myCommand, struct bgProcess *head);
  
 #endif
