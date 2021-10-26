@@ -4,11 +4,11 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <math.h>
 #include "command.h"
 #include "parse.h"
 #include "exec.h"
 #include "background.h"
+#include "sighandle.h"
 
 
 // Returns true if the first printable character in 'text' is 'comparison'
@@ -33,6 +33,7 @@ bool startsWithOrEmpty(char * text, char comparison) {
 
 
 int main() {
+  registerIgnoreSIGINT();  // ignore SIGINT signal
   char commandText[2049];  // max length of 2048 characters
   int lastExitStatus = 0;
   struct bgProcess *head = initializeBgProcess();
@@ -51,7 +52,7 @@ int main() {
     }
     struct command *myCommand = createCommand(commandText);
     // printCommand(myCommand);  // for debugging
-    executeCommand(myCommand, &lastExitStatus, head);
+    runCommand(myCommand, &lastExitStatus, head);
     freeCommand(myCommand);
   }
 }
