@@ -42,12 +42,14 @@ static void fillExecVector(struct command *myCommand, char *newargv[]) {
 static void runChildProcess(struct command *myCommand) {
   if(!myCommand->isBackground) {  // if foreground process
     if(myCommand->inputFile) redirectStd(myCommand->inputFile, 0);  // redir to input if provided, else leave as stdin
-    if(myCommand->outputFile) redirectStd(myCommand->outputFile, 1);
+    if(myCommand->outputFile) redirectStd(myCommand->outputFile, 1);  // redir to output if provided, else leave as stdin
     registerHandler(SIGINT, SIG_DFL);  // foregound processes should terminate upon receiving SIGINT
+    registerHandler(SIGTSTP, SIG_DFL);  // foregound processes should ignore SIGTSP
   } else {  // if background process
     myCommand->inputFile ? redirectStd(myCommand->inputFile, 0) : redirectStd("/dev/null", 0);  // redir to input or /dev/null
-    myCommand->outputFile ? redirectStd(myCommand->outputFile, 1) : redirectStd("/dev/null", 1); 
+    myCommand->outputFile ? redirectStd(myCommand->outputFile, 1) : redirectStd("/dev/null", 1);  // redir to output or /dev/null
     registerHandler(SIGINT, SIG_IGN);  // background processes should ignore SIGINT
+    registerHandler(SIGTSTP, SIG_DFL);  // background processes should ignore SIGTSP
   }
   char *newargv[myCommand->argCount + 2]; // ["ls", "-a", "-l", NULL]  length is # of arguments, add two for the program and NULL
   fillExecVector(myCommand, newargv);  // fill the array with the strings listed above
