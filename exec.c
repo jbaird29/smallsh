@@ -10,46 +10,21 @@
 
 /* ------------------------ HELPER FUNCTIONS ------------------------ */
 
-// redirects stdin and stdout to the input and output file names, if provided in the command
-static void redirectInputAndOutput(struct command *myCommand) {
-  // redirect the input
-  int inputFD = STDIN_FILENO;
-  if(myCommand->inputFile) {
-    inputFD = open(myCommand->inputFile, O_RDONLY);  // if an inputFile was specified, open that file
-  } else if(myCommand->isBackground) {
-    inputFD = open("/dev/null", O_RDONLY);  // if no inputFile was specified AND this is a background process, redirect to /dev/null
-  }
-  if(inputFD == -1) {    // ensure the file was opened correctly
-    perror("input open()"); 
+// redirects stdin or stdout to point to new filename; if stdFileNo is 0 -> stdin; if stdFileNo is 1 -> stdout
+static void redirectStd(char *filename, int stdFileNo) {
+  int openFlags = (stdFileNo == 0) ? (O_RDONLY) : (O_WRONLY | O_CREAT | O_TRUNC);  // 0 for stdin, 1 for stdout
+  int fd = open(filename, openFlags, 0644);  // open the file
+  if(fd == -1) {    // ensure the file was opened correctly
+    stdFileNo == 0 ? perror("input open()") : perror("output open()");
     exit(EXIT_FAILURE); 
   }
-  if(inputFD != STDIN_FILENO) {
-    int result = dup2(inputFD, STDIN_FILENO);  // redirect stdin to the input file
-    if(result == -1) {
-      perror("input dup2()"); 
-      exit(EXIT_FAILURE); 
-    }
-  }
-
-  // redirect the output
-  int outputFD = STDOUT_FILENO;
-  if(myCommand->outputFile) {
-    outputFD = open(myCommand->outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);  // If an output file was specified, open output file
-  } else if(myCommand->isBackground) {
-    outputFD = open("/dev/null", O_WRONLY | O_CREAT | O_TRUNC, 0644);  // if none specified AND this is a background process, use /dev/null
-  }
-  if(outputFD == -1) {    // ensure the file was opened correctly
-    perror("output open()"); 
+  int result = dup2(fd, stdFileNo);  // redirect stdin/stdout to the input/output file
+  if(result == -1) {  // ensure redirection was successful
+    stdFileNo == 0 ? perror("input dup2()") : perror("output dup2()");
     exit(EXIT_FAILURE); 
-  }
-  if(outputFD != STDOUT_FILENO) {
-    int result = dup2(outputFD, STDOUT_FILENO);  // redirect stdout to the output file
-    if(result == -1) {
-      perror("output dup2()"); 
-      exit(EXIT_FAILURE); 
-    }
   }
 }
+
 
 // converts the commany strcut and arguments into a vector, ready to be passed to an execv() function
 static void fillExecVector(struct command *myCommand, char *newargv[]) {
@@ -60,6 +35,22 @@ static void fillExecVector(struct command *myCommand, char *newargv[]) {
 }
 
 
+static void runChildProcess(struct command *myCommand) {
+  if(!myCommand->isBackground) {  // if foreground process
+    if(myCommand->inputFile) redirectStd(myCommand->inputFile, 0);  // redir to input if provided, else leave as stdin
+    if(myCommand->outputFile) redirectStd(myCommand->outputFile, 1);
+  } else {  // if background process
+    myCommand->inputFile ? redirectStd(myCommand->inputFile, 0) : redirectStd("/dev/null", 0);  // redir to input or /dev/null
+    myCommand->outputFile ? redirectStd(myCommand->outputFile, 1) : redirectStd("/dev/null", 1); 
+  }
+  char *newargv[myCommand->argCount + 2]; // ["ls", "-a", "-l", NULL]  length is # of arguments, add two for the program and NULL
+  fillExecVector(myCommand, newargv);  // fill the array with the strings listed above
+  execvp(newargv[0], newargv);  // execute the command
+  perror("execvp");  // only reaches this code upon an error
+  exit(EXIT_FAILURE);
+}
+
+
 // runs fork() and exec() to execute a command
 static void executeOtherCommand(struct command *myCommand, int *lastExitStatus, struct bgProcess *head) {
 	pid_t childPid = fork();  // in the child: equals 0;  in the parent: equals the child's pid
@@ -67,12 +58,7 @@ static void executeOtherCommand(struct command *myCommand, int *lastExitStatus, 
     perror("fork() failed!");
     exit(1);
   } else if(childPid == 0) {  // child process
-    char *newargv[myCommand->argCount + 2]; // ["ls", "-a", "-l", NULL]  length is # of arguments, add two for the program and NULL
-    fillExecVector(myCommand, newargv);  // fill the array with the strings listed above
-    redirectInputAndOutput(myCommand);  // set up redirection of input file and output file
-    execvp(newargv[0], newargv);  // execute the command
-    perror("execvp");  // only reaches this code upon an error
-    exit(EXIT_FAILURE);
+    runChildProcess(myCommand);
   } else {  // parent process
     if(!myCommand->isBackground) {  // if foreground, we need to block
       waitpid(childPid, lastExitStatus, 0);  // blocking until the child process terminates
