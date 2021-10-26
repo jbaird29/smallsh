@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "command.h"
 #include "background.h"
 #include "sighandle.h"
@@ -42,11 +43,11 @@ static void runChildProcess(struct command *myCommand) {
   if(!myCommand->isBackground) {  // if foreground process
     if(myCommand->inputFile) redirectStd(myCommand->inputFile, 0);  // redir to input if provided, else leave as stdin
     if(myCommand->outputFile) redirectStd(myCommand->outputFile, 1);
-    registerDefaultSIGINT();  // foregound processes should terminate upon receiving SIGINT
+    registerHandler(SIGINT, SIG_DFL);  // foregound processes should terminate upon receiving SIGINT
   } else {  // if background process
     myCommand->inputFile ? redirectStd(myCommand->inputFile, 0) : redirectStd("/dev/null", 0);  // redir to input or /dev/null
     myCommand->outputFile ? redirectStd(myCommand->outputFile, 1) : redirectStd("/dev/null", 1); 
-    registerIgnoreSIGINT();  // background processes should ignore SIGINT
+    registerHandler(SIGINT, SIG_IGN);  // background processes should ignore SIGINT
   }
   char *newargv[myCommand->argCount + 2]; // ["ls", "-a", "-l", NULL]  length is # of arguments, add two for the program and NULL
   fillExecVector(myCommand, newargv);  // fill the array with the strings listed above

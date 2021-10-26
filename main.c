@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
 #include "command.h"
 #include "parse.h"
 #include "exec.h"
@@ -33,7 +34,7 @@ bool startsWithOrEmpty(char * text, char comparison) {
 
 
 int main() {
-  registerIgnoreSIGINT();  // ignore SIGINT signal
+  registerHandler(SIGINT, SIG_IGN);  // ignore SIGINT signal
   char commandText[2049];  // max length of 2048 characters
   int lastExitStatus = 0;
   struct bgProcess *head = initializeBgProcess();
