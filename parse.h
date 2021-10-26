@@ -1,5 +1,5 @@
-#ifndef PARSECOMMAND_H
-#define PARSECOMMAND_H 
+#ifndef PARSE_H
+#define PARSE_H 
 
 struct command *createCommand(char *commandText);
 

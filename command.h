@@ -1,5 +1,5 @@
-#ifndef COMMANDSTRUCT_H
-#define COMMANDSTRUCT_H 
+#ifndef COMMAND_H
+#define COMMAND_H 
 
 #define MAX_ARGUMENTS 512
 
@@ -12,5 +12,13 @@ struct command {
   char *outputFile;
   bool isBackground;
 };
+
+
+// linked list for holding the pid of children running in background
+struct bgProcess {
+  pid_t childPid;
+  struct bgProcess *next;
+};
+
 
 #endif

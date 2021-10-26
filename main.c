@@ -5,31 +5,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <math.h>
-#include "commandstruct.h"
-#include "parsecommand.h"
-#include "execcommand.h"
-
-void executeCommand(struct command *myCommand) {
-  if(strcmp(myCommand->program, "exit") == 0) {
-    // TODO ------------------------------------------------------------------
-    // The exit command exits your shell. It takes no arguments. When this command is run, 
-    // your shell must kill any other processes or jobs that your shell has started before it terminates itself.
-    exit(EXIT_SUCCESS);
-  } else if (strcmp(myCommand->program, "cd") == 0) {
-    // TODO ------------------------------------------------------------------
-    // The cd command changes the working directory of smallsh.
-    // By itself - with no arguments - it changes to the directory specified in the HOME environment variable
-      // This is typically not the location where smallsh was executed from, unless your shell executable is located in the HOME directory, in which case these are the same.
-    // This command can also take one argument: the path of a directory to change to. Your cd command should support both absolute and relative paths.
-  } else if (strcmp(myCommand->program, "status") == 0) {
-    // TODO ------------------------------------------------------------------
-    // The status command prints out either the exit status or the terminating signal of the last foreground process ran by your shell.
-    // If this command is run before any foreground command is run, then it should simply return the exit status 0.
-    // The three built-in shell commands do not count as foreground processes for the purposes of this built-in command - i.e., status should ignore built-in commands.
-  } else {
-    executeOtherCommand(myCommand);
-  }
-}
+#include "command.h"
+#include "parse.h"
+#include "exec.h"
+#include "background.h"
 
 
 // Returns true if the first printable character in 'text' is 'comparison'
@@ -55,7 +34,10 @@ bool startsWithOrEmpty(char * text, char comparison) {
 
 int main() {
   char commandText[2049];  // max length of 2048 characters
+  int lastExitStatus = 0;
+  struct bgProcess *head = initializeBgProcess();
   while(1) {
+    reapBgProccesses(head);
     memset(commandText, '\0', sizeof(commandText));
     putchar(':');
     putchar(' ');
@@ -69,7 +51,7 @@ int main() {
     }
     struct command *myCommand = createCommand(commandText);
     // printCommand(myCommand);  // for debugging
-    executeCommand(myCommand);
+    executeCommand(myCommand, &lastExitStatus, head);
     freeCommand(myCommand);
   }
 }

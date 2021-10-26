@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <math.h>
-#include "commandstruct.h"
+#include "command.h"
 
 /* ------------------------ HELPER FUNCTIONS ------------------------ */
 
