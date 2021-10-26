@@ -1,6 +1,8 @@
 #ifndef PARSE_H
 #define PARSE_H 
 
+bool startsWithOrEmpty(char * text, char comparison);
+
 struct command *createCommand(char *commandText);
 
 void freeCommand(struct command *myCommand);

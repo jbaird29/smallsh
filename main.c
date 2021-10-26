@@ -12,27 +12,6 @@
 #include "sighandle.h"
 
 
-// Returns true if the first printable character in 'text' is 'comparison'
-// Also returns true if 'text' is comprised of only non printable characters (eg spaces or newlines)
-// Otherwsies returns false
-bool startsWithOrEmpty(char * text, char comparison) {
-  int i = 0;
-  while(text[i] != '\0') {
-    if(text[i] == comparison) {
-        // if this letter is 'comparison' value, return true
-      return true;
-    } else if(text[i] >= 33 && text[i] <= 126) {
-       // if this letter is a printable character, return false (does not start with comp)
-      return false;
-    }
-    // if this letter is a nonprintable character, iterate to next letter
-    i++;
-  }
-  // if ALL letters were non printable, return true
-  return true;
-}
-
-
 int main() {
   registerHandler(SIGINT, SIG_IGN);  // ignore SIGINT signal
   char commandText[2049];  // max length of 2048 characters
