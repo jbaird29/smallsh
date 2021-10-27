@@ -94,6 +94,18 @@ static struct command *initializeCommand() {
 }
 
 
+// if the last printable char (excl spaces) in text is 'comparison', returns the index of that char; else returns -1
+int endsWith(char *text, int len, char comparison) {
+  for(int i = len-1; i >= 0; i--) {
+    if(text[i] == comparison) return i;  // if this letter is 'comparison' value, return true
+    if(text[i] >= 33 && text[i] <= 126) return -1;  // if this letter is a printable character, return false (does not start with comp)
+    // otherwise, this letter is a nonprintable character such as a space; iterate to next letter
+  }
+  return -1;  // if ALL letters were non-printable, return false (it was an empty line)
+}
+
+
+
 
 
 /* ------------------------ EXTERNAL FUNCTIONS ------------------------ */
@@ -109,16 +121,6 @@ bool startsWithOrEmpty(char * text, char comparison) {
     i++;  // otherwise, this letter is a nonprintable character such as a space; iterate to next letter
   }
   return true;  // if ALL letters were non-printable, return true (it was an empty line)
-}
-
-
-bool endsWith(char *text, int len, char comparison) {
-  for(int i = len-1; i >= 0; i--) {
-    if(text[i] == comparison) return true;  // if this letter is 'comparison' value, return true
-    if(text[i] >= 33 && text[i] <= 126) return false;  // if this letter is a printable character, return false (does not start with comp)
-    // otherwise, this letter is a nonprintable character such as a space; iterate to next letter
-  }
-  return false;  // if ALL letters were non-printable, return false (it was an empty line)
 }
 
 
@@ -147,10 +149,10 @@ void freeUserCommand(char *commandText) {
 struct command *createCommand(char *commandText) {
   struct command *myCommand = initializeCommand();  // allocates a command struct and initializes values
   // first parse the & if it is present, and remove it from the string
-  int len = strlen(commandText);
-  if(endsWith(commandText, len, '&')) {  // if the last printable character (excluding spaces) is an '&'
+  int ind = endsWith(commandText, strlen(commandText), '&');  // if text ends with &, returns the index of that &; else returns -1
+  if(ind != -1) {  // if the last printable character (excluding spaces) is an '&'
     if(!fgOnlyMode) myCommand->isBackground = true;  // set isBackground to true ONLY IF fgOnlyMode is not active
-    commandText[len-1] = '\0';  // remove the ampersand from the string; it has been validly parsed
+    commandText[ind] = '\0';  // remove the ampersand from the string; it has been validly parsed
   }
   // next tokenize the string from start to end
   char *saveptr;
