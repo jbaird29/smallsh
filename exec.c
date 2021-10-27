@@ -12,6 +12,7 @@
 #include "status.h"
 #include "globals.h"
 #include "parse.h"
+#include "cd.h"
 
 
 /* ------------------------ HELPER FUNCTIONS ------------------------ */
@@ -95,11 +96,7 @@ void runCommand(struct command *myCommand, char *commandText, struct bgProcess *
     freeUserCommand(commandText);  // free the memory allocated for the user command
     exit(EXIT_SUCCESS);
   } else if (strcmp(myCommand->program, "cd") == 0) {
-    // TODO ------------------------------------------------------------------
-    // The cd command changes the working directory of smallsh.
-    // By itself - with no arguments - it changes to the directory specified in the HOME environment variable
-      // This is typically not the location where smallsh was executed from, unless your shell executable is located in the HOME directory, in which case these are the same.
-    // This command can also take one argument: the path of a directory to change to. Your cd command should support both absolute and relative paths.
+    runCd(myCommand); 
   } else if (strcmp(myCommand->program, "status") == 0) {
     printStatus(lastFpProcess.wstatus);  // prints the exit val or term signal to stdout
   } else {
