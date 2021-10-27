@@ -3,7 +3,7 @@
 
 
 // given a wstatus obtained by wait() or waitpid() - prints the exit value or terminating signal to stdout
-void printStatus(wstatus) {
+void printStatus(int wstatus) {
   if(WIFEXITED(wstatus)){
     printf("exit value %d\n", WEXITSTATUS(wstatus));
   } else{
