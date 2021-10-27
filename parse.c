@@ -14,60 +14,33 @@
 
 // given a string, returns a pointer to a new string with the $$ pid variable expanded (if any)
 static char *copyAndExpandPidVar(char *oldStr) {
-  // oldStr    = foo$$$$bar$$
-  // varMarkers   = 000111100011  -> iterate through string and mark 1 where there are double $$
-  // pidVarCount  = 3 --> the number of double variables
-  // newStringLen = strlen(stringToCopy) - 2*pidVarCount + strlen(pid)*pidVarCount + 1 = 12 - 2*3 + 6*3
-  // iterate through string again
-  //     if the varMarker is 0 ->  add that character to new buffer; i = i+1
-  //     if the varMarker is 1 ->  concat the pid onto new buffer; i = i+2
   pid_t pid = getpid();  // get the pid, as a number
   // Below line of code copied from: https://stackoverflow.com/questions/8257714/how-to-convert-an-int-to-string-in-c
   // How to calcualte the number of digits in an integer; Date: 10/25/2021
   int pidStrLen = (int)ceil(log10(pid));  // figure out how many digits are in the pid
   char pidStr[pidStrLen+1];  // create a buffer to hold the string representation of the pid
-  sprintf(pidStr, "%d", pid);  // print the string representation of pid into the buffer
-  int oldStrLen = strlen(oldStr);   // length of the old string 
-  bool variableMarkers[oldStrLen];  // array value holds a true if that char was part of a "$$", else false
-  variableMarkers[0] = 0;
+  sprintf(pidStr, "%d", pid);  // put the string representation of pid into the buffer
+  // count the # of $$'s in the oldStr, to figure out the necessary size of the newStr buffer
   int pidVarCount = 0;  // holds the number of instances of a "$$" in the string
-  int i = 1;
-  while(i < oldStrLen) {
-    if(oldStr[i] == '$' && oldStr[i-1] == '$') {  // if a "$$" instance was discovered
-      variableMarkers[i] = true;  // mark these characters as part of that $$
-      variableMarkers[i-1] = true;
-      pidVarCount++;  // increment the number of discovered $$'s
-      i = i + 2;
-    } else {
-      variableMarkers[i] = false;
-      i = i + 1;
-    }
+  char *curr = strstr(oldStr, "$$");  // search for the first instance of a $$ in oldStr
+  while(curr) {  // if one was found
+    pidVarCount++;  // increment the counter
+    curr = strstr(curr+2, "$$");  // move two characters forward and re-search for a $$
   }
-  int newStrLen = oldStrLen - (2 * pidVarCount) + (pidStrLen * pidVarCount);  // self-explanatory
+  int newStrLen = strlen(oldStr) - (2 * pidVarCount) + (pidStrLen * pidVarCount);  // self-explanatory
   char *newStr = calloc(newStrLen + 1, sizeof(char));  // allocate memory space for the new string
-  int oldStr_i = 0, newStr_i = 0;  // variables to incrementer through old string and new strnig
-  while(oldStr_i < oldStrLen) {
-    if(!variableMarkers[oldStr_i]) {  // if this spot in the string was NOT part of a "$$"
-      newStr[newStr_i] = oldStr[oldStr_i];  // copy the letter from old string to new string
-      oldStr_i = oldStr_i + 1;  // increment each pointer by 1
-      newStr_i = newStr_i + 1;  // increment each pointer by 1
-    } else {  // if this spot in the string WAS part of a "$$"
-      strcat(newStr, pidStr);  // replace the $$ with the pid
-      oldStr_i = oldStr_i + 2; // skip the next entry (which was already counted as a part of this $$)
-      newStr_i = newStr_i + pidStrLen;  // increment by the number of digits in newStr
-    }
+  // now, copy the letters from oldStr to newStr, but replacing any $$'s
+  char *prev = oldStr;  // for purposes of incrementing; used to hold the previous spot in oldStr
+  curr = strstr(prev, "$$");  // search for the first instance of a $$ in oldStr
+  while(curr) {
+    strncat(newStr, prev, (curr-prev)*sizeof(char));  // copy all the characters up until the $$
+    strcat(newStr, pidStr);  // append the PID string
+    prev = curr+2;  // move two characters forward
+    curr = strstr(prev, "$$");  // re-search for another $$
   }
+  strcat(newStr, prev);  // append the remaining portion of oldStr
   return newStr;
 }
-
-
-// static int TEST_copyAndExpandPidVar() {
-//   char oldstring[] = "$$f$oo$$$o$bar$$";
-//   char *newString = copyAndExpandPidVar(oldstring);
-//   printf("Old: %s\n", oldstring);
-//   printf("New: %s\n", newString);
-//   return strcmp(newString, "29325f$oo29325$o$bar29325") == 0 ? 1 : 0;
-// }
 
 
 // given an opereator (either > or <) and filename argument, adds that filename to the command's inputFile or outputFile
