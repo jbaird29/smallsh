@@ -11,6 +11,7 @@
 #include "sighandle.h"
 #include "status.h"
 #include "globals.h"
+#include "parse.h"
 
 
 /* ------------------------ HELPER FUNCTIONS ------------------------ */
@@ -87,11 +88,11 @@ static void runExecCommand(struct command *myCommand, struct bgProcess *head) {
 
 /* ------------------------ EXTERNAL FUNCTIONS ------------------------ */
 
-void runCommand(struct command *myCommand, struct bgProcess *head) {
+void runCommand(struct command *myCommand, char *commandText, struct bgProcess *head) {
   if(strcmp(myCommand->program, "exit") == 0) {
-    // TODO ------------------------------------------------------------------
-    // The exit command exits your shell. It takes no arguments. When this command is run, 
-    // your shell must kill any other processes or jobs that your shell has started before it terminates itself.
+    terminateBgProccesses(head);  // sends SIGTERM signals to all bg processes and frees the memory consumed by the list
+    freeCommand(myCommand);  // free the memory allocated for the struct
+    freeUserCommand(commandText);  // free the memory allocated for the user command
     exit(EXIT_SUCCESS);
   } else if (strcmp(myCommand->program, "cd") == 0) {
     // TODO ------------------------------------------------------------------

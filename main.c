@@ -24,7 +24,7 @@ int main() {
     if(!startsWithOrEmpty(commandText, '#')) {   // if command starts with '#' or is empty, do nothing; else continue
       struct command *myCommand = createCommand(commandText);  // parse the command and put info into a struct
       // printCommand(myCommand);  // for debugging
-      runCommand(myCommand, head);  // execute the command
+      runCommand(myCommand, commandText, head);  // execute the command
       freeCommand(myCommand);  // free the memory allocated for the struct
     }
     freeUserCommand(commandText);  // free the memory allocated for the user command;

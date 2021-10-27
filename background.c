@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "structs.h"
 #include "status.h"
 
@@ -51,8 +52,22 @@ void reapBgProccesses(struct bgProcess *head) {
       freeBgProcess(node);  // free the memory
       node = prev->next;  // iterate to the next node
     } else {  // if the process has not terminated (returns 0)
-      prev = prev->next;  // iterate to next node in list
+      prev = node;  // iterate to next node in list
       node = node->next;
     }
   }
+}
+
+
+// given the head of the list, iterates through nodes and sends SIGTERM signals to all processes
+void terminateBgProccesses(struct bgProcess *head) {
+  struct bgProcess *prev = head;
+  struct bgProcess *node = head->next;  // head is a sentinel; first node in the list will be head->next (NULL for empty list)
+  while(node) {
+    kill(node->childPid, SIGTERM);
+    prev = node;  // iterate to next node in list
+    node = node->next;
+    freeBgProcess(prev);  // free the memory of this node
+  }
+  freeBgProcess(head);  // free the head
 }

@@ -7,4 +7,6 @@ void bgProcessInsertFront(struct bgProcess *head, pid_t childPid);
 
 void reapBgProccesses(struct bgProcess *head);
 
+void terminateBgProccesses(struct bgProcess *head);
+
 #endif

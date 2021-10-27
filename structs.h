@@ -20,6 +20,7 @@ struct bgProcess {
   struct bgProcess *next;
 };
 
+// holds the pid and wstatus of the most recently executed foreground process
 struct lastProcess {
   pid_t childPid;
   int wstatus;
