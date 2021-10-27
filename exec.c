@@ -21,7 +21,8 @@ static void redirectStd(char *filename, int stdFileNo) {
   int openFlags = (stdFileNo == 0) ? (O_RDONLY) : (O_WRONLY | O_CREAT | O_TRUNC);  // 0 for stdin, 1 for stdout
   int fd = open(filename, openFlags, 0644);  // open the file
   if(fd == -1) {    // ensure the file was opened correctly
-    stdFileNo == 0 ? perror("input open()") : perror("output open()");
+    printf("cannot open %s for %s.\n", filename, stdFileNo == 0 ? "input" : "output");
+    fflush(stdout);
     exit(EXIT_FAILURE); 
   }
   int result = dup2(fd, stdFileNo);  // redirect stdin/stdout to the input/output file
@@ -57,7 +58,8 @@ static void runChildProcess(struct command *myCommand) {
   char *newargv[myCommand->argCount + 2]; // ["ls", "-a", "-l", NULL]  length is # of arguments, add two for the program and NULL
   fillExecVector(myCommand, newargv);  // fill the array with the strings listed above
   execvp(newargv[0], newargv);  // execute the command
-  perror("execvp");  // only reaches this code upon an error
+  perror(myCommand->program);
+  // perror("execvp");  // only reaches this code upon an error
   exit(EXIT_FAILURE);
 }
 

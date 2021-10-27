@@ -22,6 +22,7 @@ void registerHandler(int signal, void (*handler_func)(int)) {
 void handle_fgModeToggleSignal(int signo){
   fgOnlyMode = !fgOnlyMode;  // toggle the global state variable
   int result = waitpid(lastFpProcess.childPid, &lastFpProcess.wstatus, 0);  // if a fg process is still running, wait for it to complete
+  if(result == -1) putchar('\n');  // if result == -1, then the shell was awaiting user input on the command line; so print a newline
   char* message = fgOnlyMode ? "Entering foreground-only mode (& is now ignored)\n" : "Exiting foreground-only mode\n";
   int messageSize = fgOnlyMode ? 50 : 30;
   write(STDOUT_FILENO, message, messageSize);
