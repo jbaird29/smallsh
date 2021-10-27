@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <sys/wait.h>
 #include "globals.h"
 #include "structs.h"
 
