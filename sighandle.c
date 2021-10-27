@@ -11,7 +11,9 @@
 
 // given a signal and a handler function, registers that signal handler
 void registerHandler(int signal, void (*handler_func)(int)) {
-  struct sigaction SIGINT_action = {0};
+  // Used: https://stackoverflow.com/questions/13746033/how-to-repair-warning-missing-braces-around-initializer
+  // To fix bug with GCC compiler; date: 10/27/2021
+  struct sigaction SIGINT_action = {{0}};
   SIGINT_action.sa_handler = handler_func;  // assign the signal handler function
   sigfillset(&SIGINT_action.sa_mask);  // block all other signals
   SIGINT_action.sa_flags = SA_RESTART;  // restart any system calls after interrupt
