@@ -80,20 +80,6 @@ static void addInputOrOutputFile(struct command *myCommand, char *file, char ope
 }
 
 
-// returns false the end of the argument list has been reached (ie the word in the command text is a > or < or &)
-static bool isAnArgument(char *string) {
-  // TODO - "If the & character appears anywhere else, just treat it as normal text"
-  // could & be an argument to the program?
-  // if so, then I will have additionally to ensure that the & here is the final character in the string
-  // something like: strcmp(string, "&") == 0 && isLastCharacter(string)
-  if(strcmp(string, ">") == 0 || strcmp(string, "<") == 0 || strcmp(string, "&") == 0) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-
 // allocates memory for a command struct, initializes its values, and returns a pointer to it
 static struct command *initializeCommand() {
   struct command *myCommand = malloc(sizeof(struct command));
@@ -118,18 +104,21 @@ static struct command *initializeCommand() {
 bool startsWithOrEmpty(char * text, char comparison) {
   int i = 0;
   while(text[i] != '\0') {
-    if(text[i] == comparison) {
-        // if this letter is 'comparison' value, return true
-      return true;
-    } else if(text[i] >= 33 && text[i] <= 126) {
-       // if this letter is a printable character, return false (does not start with comp)
-      return false;
-    }
-    // if this letter is a nonprintable character, iterate to next letter
-    i++;
+    if(text[i] == comparison) return true;  // if this letter is 'comparison' value (will be # for comments), return true
+    if(text[i] >= 33 && text[i] <= 126) return false;  // if this letter is a printable character, return false (does not start with comp)
+    i++;  // otherwise, this letter is a nonprintable character such as a space; iterate to next letter
   }
-  // if ALL letters were non printable, return true
-  return true;
+  return true;  // if ALL letters were non-printable, return true (it was an empty line)
+}
+
+
+bool endsWith(char *text, int len, char comparison) {
+  for(int i = len-1; i >= 0; i--) {
+    if(text[i] == comparison) return true;  // if this letter is 'comparison' value, return true
+    if(text[i] >= 33 && text[i] <= 126) return false;  // if this letter is a printable character, return false (does not start with comp)
+    // otherwise, this letter is a nonprintable character such as a space; iterate to next letter
+  }
+  return false;  // if ALL letters were non-printable, return false (it was an empty line)
 }
 
 
@@ -154,39 +143,37 @@ void freeUserCommand(char *commandText) {
 
 
 // given a line of text, creates and returns a pointer to a command struct
+// syntax:  command [arg1 arg2 ...] [< input_file] [> output_file] [&]
 struct command *createCommand(char *commandText) {
-  // syntax:  command [arg1 arg2 ...] [< input_file] [> output_file] [&]
-  struct command *myCommand = initializeCommand();
+  struct command *myCommand = initializeCommand();  // allocates a command struct and initializes values
+  // first parse the & if it is present, and remove it from the string
+  int len = strlen(commandText);
+  if(endsWith(commandText, len, '&')) {  // if the last printable character (excluding spaces) is an '&'
+    if(!fgOnlyMode) myCommand->isBackground = true;  // set isBackground to true ONLY IF fgOnlyMode is not active
+    commandText[len-1] = '\0';  // remove the ampersand from the string; it has been validly parsed
+  }
+  // next tokenize the string from start to end
   char *saveptr;
   char *token;
-
   // first word is the program
   token = strtok_r(commandText, " ", &saveptr);
   myCommand->program = copyAndExpandPidVar(token);
-
-  // next words are the arguments; continue until < > or & reached
+  // next words are the arguments
   token = strtok_r(NULL, " ", &saveptr);
-  while(token && isAnArgument(token)) {
-    myCommand->arguments[myCommand->argCount] = copyAndExpandPidVar(token);
-    token = strtok_r(NULL, " ", &saveptr);
-    myCommand->argCount++;
+  while(token && strcmp(token, ">") != 0 && strcmp(token, "<") != 0) {  // continue tokenizing until and < or > is reached
+    myCommand->arguments[myCommand->argCount] = copyAndExpandPidVar(token);  // save the argument into the struct
+    myCommand->argCount++;  // increment the count of arguments
+    token = strtok_r(NULL, " ", &saveptr);  // get the next token
   }
-
-  // parse the < or > (two times) if they are present
+  // finally parse the < or > (two times); if they are not present, nothing happens
   for(int i = 0; i < 2; i++) {
     if(token && (strcmp(token, ">") == 0 || strcmp(token, "<") == 0)) {
       char operator = token[0];  // get the operator (either > or <)
       token = strtok_r(NULL, " ", &saveptr);  // get the parameter (either inputFile or outputFile)
-      addInputOrOutputFile(myCommand, token, operator);
-      token = strtok_r(NULL, " ", &saveptr);
+      addInputOrOutputFile(myCommand, token, operator);  // add it to the struct
+      token = strtok_r(NULL, " ", &saveptr);  // get the next token
     }
   }
-
-  // parse the & if it is present
-  if(token && token[0] == '&') {
-    if(!fgOnlyMode) myCommand->isBackground = true;  // don't set to true if fgOnlyMode is active
-  }
-
   return myCommand;
 }
 
